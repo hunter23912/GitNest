@@ -1,5 +1,3 @@
-正在收集工作区信息```markdown
-
 # GitNest 前端项目说明文档
 
 ## 项目简介
@@ -133,11 +131,3 @@ frontend/
 - 路由页面建议放在 `src/pages/`，通用组件放在 `src/components/`。
 - 如需添加新页面，建议在 `src/pages/` 新建对应文件，并在 `src/router/index.jsx` 配置路由。
 - 静态图片如需直接通过 URL 访问，请放在 `public/` 目录。
-
----
-
-如有疑问请联系项目负责人或查阅 [`README.md`](README.md)。
-
-```
-
-```
