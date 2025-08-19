@@ -1,0 +1,10 @@
+POST http://localhost:8080/user/register
+Content-Type: application/x-www-form-urlencoded
+
+username=testuser&password=testpwd123&email=test@example.com
+
+### 登录
+POST http://localhost:8080/user/login
+Content-Type: application/x-www-form-urlencoded
+
+username=wjh&password=123456

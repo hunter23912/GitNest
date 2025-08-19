@@ -1,0 +1,5 @@
+com\sharedGit\controller\AIController.class
+com\sharedGit\config\Webconfig.class
+com\sharedGit\interceptors\LoginInterceptor.class
+com\sharedGit\service\AIService.class
+com\sharedGit\SharedGitApplication.class

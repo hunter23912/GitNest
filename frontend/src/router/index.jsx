@@ -14,6 +14,7 @@ import AIAssistant from "../pages/AIAssistant";
 import CollaborativeEditor from "../pages/CollaborativeEditor";
 import ProjectKanban from "../pages/ProjectKanban";
 import CodeQuality from "../pages/CodeQuality";
+import React from "react";
 
 export const router = createBrowserRouter([
   {

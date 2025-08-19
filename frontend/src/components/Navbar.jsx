@@ -13,14 +13,25 @@ function Navbar() {
   useEffect(() => {
     const checkAuth = () => {
       const userStr = localStorage.getItem("user");
-      if (userStr) {
-        const userData = JSON.parse(userStr);
-        setIsAuthenticated(true);
-        setUser(userData);
+      if (!userStr) {
+        setIsAuthenticated(false);
+        setUser(null);
+        return;
       }
+
+      // 直接当作用户名字符串处理
+      setIsAuthenticated(true);
+      setUser({ username: userStr });
+      console.log("[Navbar] user found ->", userStr);
     };
 
     checkAuth();
+    window.addEventListener("user-change", checkAuth); // 监听同tab
+    window.addEventListener("storage", checkAuth); // 监听跨tab
+    return () => {
+      window.removeEventListener("user-change", checkAuth);
+      window.removeEventListener("storage", checkAuth);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -89,13 +100,7 @@ function Navbar() {
 
               <UserMenuContainer>
                 <UserMenuButton onClick={() => setShowUserMenu(!showUserMenu)}>
-                  {user.avatarUrl ? (
-                    <UserAvatar src={user.avatarUrl} alt={user.username} />
-                  ) : (
-                    <UserAvatarPlaceholder>
-                      {(user.name || user.username).charAt(0).toUpperCase()}
-                    </UserAvatarPlaceholder>
-                  )}
+                  {user.avatarUrl ? <UserAvatar src={user.avatarUrl} alt={user.username} /> : <UserAvatarPlaceholder>{(user.name || user.username).charAt(0).toUpperCase()}</UserAvatarPlaceholder>}
                   <FaChevronDown size={12} />
                 </UserMenuButton>
 
@@ -252,8 +257,7 @@ const SearchBarContainer = styled.div`
   padding: 0 18px 0 12px;
   box-sizing: border-box;
   border: 2px solid transparent;
-  transition: background 0.3s ease-out, border-radius 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
-    transform 0.35s cubic-bezier(0.68, -0.6, 0.32, 1.6), box-shadow 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+  transition: background 0.3s ease-out, border-radius 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.35s cubic-bezier(0.68, -0.6, 0.32, 1.6), box-shadow 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
     border 0.2s ease-out;
   border-color: ${({ $focused }) => ($focused ? "#6366f1" : "transparent")};
   transform: ${({ $focused }) => ($focused ? "scale(1.02)" : "scale(1)")};
@@ -261,8 +265,7 @@ const SearchBarContainer = styled.div`
 
   &:hover {
     background: ${({ $focused }) => ($focused ? "#fff" : "#e0e7ff")};
-    box-shadow: ${({ $focused }) =>
-      $focused ? "0 6px 20px rgba(99, 102, 241, 0.18)" : "0 4px 10px rgba(0, 0, 0, 0.1)"};
+    box-shadow: ${({ $focused }) => ($focused ? "0 6px 20px rgba(99, 102, 241, 0.18)" : "0 4px 10px rgba(0, 0, 0, 0.1)")};
     transition: background 0.25s ease-out, box-shadow 0.3s ease-out;
   }
 
@@ -306,15 +309,7 @@ const ColorSearchIcon = styled(({ className, $focused }) => (
       </linearGradient>
     </defs>
     <circle cx="10" cy="10" r="8" stroke="url(#search-gradient-vivid)" strokeWidth="2.2" fill="none" />
-    <line
-      x1="16.5"
-      y1="16.5"
-      x2="21"
-      y2="21"
-      stroke="url(#search-gradient-vivid)"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-    />
+    <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="url(#search-gradient-vivid)" strokeWidth="2.2" strokeLinecap="round" />
   </svg>
 ))`
   flex-shrink: 0;

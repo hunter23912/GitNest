@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { FaGitAlt, FaEye, FaEyeSlash } from "react-icons/fa";
+import { apiFetch } from "../utils/request";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -102,51 +103,34 @@ const Register = () => {
     setErrors({});
 
     try {
-      const res = await fetch("/api/register", {
+      const body = new URLSearchParams({
+        username: formData.username,
+        password: formData.password,
+        email: formData.email,
+      }).toString();
+
+      const res = await apiFetch("/user/register", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: JSON.stringify({
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-        }),
+        body: body,
       });
 
       const resp = await res.json();
 
       if (resp.code === 1) {
-        setErrors({ general: resp.data || "注册失败，请稍后重试" });
-      } else {
-        localStorage.setItem("user", JSON.stringify(resp.data || {}));
-        localStorage.setItem("token", resp.token || "");
+        setErrors({ general: "用户名重复，注册失败。" });
+      } else if (resp.code === 0) {
         navigate("/");
+      } else {
+        setErrors({ general: "注册失败，请稍后重试。" });
       }
     } catch (err) {
-      setErrors({ general: "注册失败，请重试" });
+      setErrors({ general: "注册失败，请重试。" });
     } finally {
       setLoading(false);
     }
-    // try {
-    //   // 模拟注册 API 调用
-    //   await new Promise(resolve => setTimeout(resolve, 1000));
-
-    //   const mockUser = {
-    //     id: Date.now(),
-    //     username: formData.username,
-    //     email: formData.email,
-    //     name: formData.username,
-    //     avatarUrl: "",
-    //   };
-
-    //   localStorage.setItem("user", JSON.stringify(mockUser));
-    //   navigate("/");
-    // } catch (err) {
-    //   setErrors({ general: "注册失败，请重试" });
-    // } finally {
-    //   setLoading(false);
-    // }
   };
 
   return (
@@ -163,44 +147,20 @@ const Register = () => {
         <RegisterForm onSubmit={handleSubmit}>
           <FormGroup>
             <Label htmlFor="username">用户名</Label>
-            <Input
-              id="username"
-              name="username"
-              type="text"
-              value={formData.username}
-              onChange={handleChange}
-              placeholder="选择一个用户名"
-              required
-            />
+            <Input id="username" name="username" type="text" value={formData.username} onChange={handleChange} placeholder="选择一个用户名" required />
             {errors.username && <ErrorText>{errors.username}</ErrorText>}
           </FormGroup>
 
           <FormGroup>
             <Label htmlFor="email">邮箱地址</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="输入您的邮箱"
-              required
-            />
+            <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} placeholder="输入您的邮箱" required />
             {errors.email && <ErrorText>{errors.email}</ErrorText>}
           </FormGroup>
 
           <FormGroup>
             <Label htmlFor="password">密码</Label>
             <PasswordContainer>
-              <Input
-                id="password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="创建一个密码"
-                required
-              />
+              <Input id="password" name="password" type={showPassword ? "text" : "password"} value={formData.password} onChange={handleChange} placeholder="创建一个密码" required />
               <PasswordToggle type="button" onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
               </PasswordToggle>

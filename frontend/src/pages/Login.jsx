@@ -2,12 +2,13 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { FaGitAlt, FaEye, FaEyeSlash } from "react-icons/fa";
-
+import { apiFetch } from "../utils/request";
 const Login = () => {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [remember, setRemember] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
@@ -17,51 +18,41 @@ const Login = () => {
     setError("");
 
     try {
-      const res = await fetch("/api/login", {
+      const body = new URLSearchParams({
+        username,
+        password,
+      }).toString();
+
+      const res = await apiFetch("/user/login", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: JSON.stringify({ email, password }),
+        body, // 传入字符串表单体
       });
 
       const resp = await res.json();
 
-      if (resp.code === 0) {
-        // 登录成功，保存用户信息到 localStorage
-        localStorage.setItem("user", JSON.stringify(resp.data));
-        localStorage.setItem("token", resp.token);
+      if (resp && resp.code === 0) {
+        if (remember) {
+          localStorage.setItem("token", resp.data);
+        } else {
+          sessionStorage.setItem("token", resp.data);
+        }
+        localStorage.setItem("user", username);
+        // 通知当前tab中的监听器，更新用户状态
+        window.dispatchEvent(new Event("user-change"));
         navigate("/");
+        const user = localStorage.getItem("user");
+        console.log("登录成功", user);
       } else {
-        setError(resp.data || "登录失败，请重试");
+        setError((resp && resp.message) || (resp && resp.data) || "无异常登录失败，请重试");
       }
     } catch (err) {
-      setError("登录失败，请稍后重试");
+      setError(err.message || "登录失败，请稍后重试");
     } finally {
       setLoading(false);
     }
-
-    // try {
-    //   // 模拟登录 API 调用
-    //   if (email === "test@example.com" && password === "password") {
-    //     const mockUser = {
-    //       id: 1,
-    //       username: "testuser",
-    //       email: email,
-    //       name: "Test User",
-    //       avatarUrl: "",
-    //     };
-
-    //     localStorage.setItem("user", JSON.stringify(mockUser));
-    //     navigate("/");
-    //   } else {
-    //     setError("邮箱或密码错误");
-    //   }
-    // } catch (err) {
-    //   setError("登录失败，请重试");
-    // } finally {
-    //   setLoading(false);
-    // }
   };
 
   return (
@@ -77,15 +68,8 @@ const Login = () => {
 
         <LoginForm onSubmit={handleSubmit}>
           <FormGroup>
-            <Label htmlFor="email">邮箱地址</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="输入您的邮箱"
-              required
-            />
+            <Label htmlFor="username">用户名</Label>
+            <Input id="username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="输入您的用户名" required />
           </FormGroup>
 
           <FormGroup>
@@ -94,14 +78,7 @@ const Login = () => {
               <ForgotLink to="/forgot-password">忘记密码？</ForgotLink>
             </LabelRow>
             <PasswordContainer>
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="输入您的密码"
-                required
-              />
+              <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="输入您的密码" required />
               <PasswordToggle type="button" onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
               </PasswordToggle>
@@ -110,7 +87,7 @@ const Login = () => {
 
           <FormOptions>
             <CheckboxLabel>
-              <Checkbox type="checkbox" />
+              <Checkbox type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
               <Checkmark></Checkmark>
               记住我
             </CheckboxLabel>
