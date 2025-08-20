@@ -1,5 +1,5 @@
 -- drop database gitshare;
-create database gitshare;
+# create database gitshare;
 use gitshare;
 
 

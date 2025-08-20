@@ -12,17 +12,14 @@ function Navbar() {
 
   useEffect(() => {
     const checkAuth = () => {
-      const userStr = localStorage.getItem("user");
-      if (!userStr) {
+      // const userStr = localStorage.getItem("user");
+      const userObj = localStorage.getItem("user");
+      console.log("[Navbar] checking auth ->", userObj);
+      if (!userObj) {
         setIsAuthenticated(false);
-        setUser(null);
+        setUser(JSON.parse(userObj));
         return;
       }
-
-      // 直接当作用户名字符串处理
-      setIsAuthenticated(true);
-      setUser({ username: userStr });
-      console.log("[Navbar] user found ->", userStr);
     };
 
     checkAuth();

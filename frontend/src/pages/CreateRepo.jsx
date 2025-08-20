@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { FaLock, FaBook, FaCheck } from "react-icons/fa";
-
+import { apiFetch } from "../utils/request";
 function CreateRepo() {
   const [formData, setFormData] = useState({
     name: "",
@@ -53,16 +53,60 @@ function CreateRepo() {
     setLoading(true);
     setErrors({});
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
       const userStr = localStorage.getItem("user");
-      const user = userStr ? JSON.parse(userStr) : null;
-      if (user) {
-        navigate(`/${user.username}/${formData.name}`);
-      } else {
-        navigate("/login");
+      let user = null;
+      if (userStr) {
+        try {
+          user = JSON.parse(userStr);
+        } catch {
+          // localStorage 存的是纯字符串（如用户名），先保存下来备用
+          user = { username: userStr };
+        }
       }
+
+      // 构造请求体
+      const payload = {
+        reponame: formData.name,
+        description: formData.description,
+        ownerid: user.userid,
+        isprivate: formData.isPrivate,
+        language: formData.gitignoreTemplate || "Other",
+        stars: 0
+      };
+      const res = await apiFetch("/repo", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": localStorage.getItem("token") || ""
+        },
+        body: JSON.stringify(payload)
+      });
+      const text = await res.text();
+      console.log("创建仓库响应:", text);
+      let resp = {};
+      try {
+        resp = text ? JSON.parse(text) : {};
+      } catch {
+        resp = { raw: text };
+      }
+      if (res.status === 401) {
+        throw new Error("未授权，请重新登录");
+      }
+      if (resp.code !== 0) {
+        throw new Error(resp.message || "创建仓库失败");
+      }
+      navigate("/repos");
     } catch (err) {
-      setErrors({ general: "创建仓库失败，请重试" });
+      let errorMsg = "创建仓库失败，请重试";
+      if (err instanceof Response) {
+        try {
+          const text = await err.text();
+          errorMsg = text || errorMsg;
+        } catch { }
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      setErrors({ general: errorMsg });
     } finally {
       setLoading(false);
     }

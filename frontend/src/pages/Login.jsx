@@ -34,12 +34,17 @@ const Login = () => {
       const resp = await res.json();
 
       if (resp && resp.code === 0) {
-        if (remember) {
-          localStorage.setItem("token", resp.data);
-        } else {
-          sessionStorage.setItem("token", resp.data);
+        const userObj = {
+          username: username,
+          userid: resp.data.userid
         }
-        localStorage.setItem("user", username);
+        if (remember) {
+          localStorage.setItem("token", resp.data.token);
+          console.log("token", resp.data.token);
+        } else {
+          sessionStorage.setItem("token", resp.data.token);
+        }
+        localStorage.setItem("user", JSON.stringify(userObj));
         // 通知当前tab中的监听器，更新用户状态
         window.dispatchEvent(new Event("user-change"));
         navigate("/");

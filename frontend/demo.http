@@ -8,3 +8,17 @@ POST http://localhost:8080/user/login
 Content-Type: application/x-www-form-urlencoded
 
 username=wjh&password=123456
+
+### 创建仓库
+POST http://localhost:8080/repo
+Content-Type: application/json
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGFpbXMiOnsidXNlcmlkIjoxLCJ1c2VybmFtZSI6IndqaCJ9LCJleHAiOjE3NTU3Njg3OTB9.ON57o3za2QXtArYtG-Vz3HK2UA5VbhkqNAxiKHcdPv4
+
+{
+  "reponame": "my-demo-repo",
+  "description": "这是一个测试仓库",
+  "ownerid": 1,
+  "isprivate": false,
+  "language": "JavaScript",
+  "stars": 0
+}
