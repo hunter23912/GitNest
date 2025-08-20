@@ -12,13 +12,21 @@ function Navbar() {
 
   useEffect(() => {
     const checkAuth = () => {
-      // const userStr = localStorage.getItem("user");
-      const userObj = localStorage.getItem("user");
-      console.log("[Navbar] checking auth ->", userObj);
-      if (!userObj) {
+      const userStr = localStorage.getItem("user");
+      // console.log("[Navbar] checking auth ->", userStr);
+      if (!userStr) {
         setIsAuthenticated(false);
-        setUser(JSON.parse(userObj));
+        setUser(null);
         return;
+      }
+      try {
+        const userObj = JSON.parse(userStr);
+        setIsAuthenticated(true);
+        setUser(userObj);
+      } catch (e) {
+        // 如果存的是普通字符串，降级处理
+        setIsAuthenticated(true);
+        setUser({ username: userStr });
       }
     };
 
@@ -110,7 +118,7 @@ function Navbar() {
                     <DropdownDivider />
                     <DropdownItem
                       onClick={() => {
-                        navigate(`/user/${user.username}`);
+                        navigate(`/profile`);
                         setShowUserMenu(false);
                       }}
                     >

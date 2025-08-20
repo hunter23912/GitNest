@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/user")
 @Validated
@@ -49,17 +48,26 @@ public class UserController {
             claims.put("userid", loginuser.getUserid());
             claims.put("username", loginuser.getUsername());
             String token = JwtUtil.genToken(claims);
-            Map<String, Object> data = new HashMap<>();
-            data.put("token", token);
-            data.put("userid", loginuser.getUserid());
-            return Result.success(data);
+            return Result.success(token);
         } else {
             return Result.error("密码错误！");
         }
     }
 
+    @GetMapping()
+    public Result getUserInfo() {
+        Map<String, Object> claims = ThreadLocalUtil.get();
+        Integer userid = (Integer) claims.get("userid");
+        User user = userService.findById(userid);
+        return Result.success(user);
+    }
+
     @PutMapping()
     public Result updateInfo(@RequestBody User user) {
+        User userServiceByEmail = userService.findByEmail(user.getEmail());
+        if (userServiceByEmail != null) return Result.error("该邮箱已经被占用");
+        User userServiceByUsername = userService.findByUsername(user.getUsername());
+        if (userServiceByUsername != null) return Result.error("该用户名已经被占用");
         userService.updateInfo(user);
         return Result.success();
     }
