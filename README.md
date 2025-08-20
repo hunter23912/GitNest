@@ -10,5 +10,6 @@ npm install
 npm run dev
 ```
 ## 后端运行
+backend目录下
 - idea中,找到pom.xml使用内置maven，同步依赖。
 - 运行项目
