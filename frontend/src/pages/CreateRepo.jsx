@@ -56,12 +56,9 @@ function CreateRepo() {
       const userStr = localStorage.getItem("user");
       let user = null;
       if (userStr) {
-        try {
-          user = JSON.parse(userStr);
-        } catch {
-          // localStorage 存的是纯字符串（如用户名），先保存下来备用
-          user = { username: userStr };
-        }
+        user = JSON.parse(userStr);
+      } else {
+        console.error("用户未登录");
       }
 
       // 构造请求体
@@ -71,15 +68,15 @@ function CreateRepo() {
         ownerid: user.userid,
         isprivate: formData.isPrivate,
         language: formData.gitignoreTemplate || "Other",
-        stars: 0
+        stars: 0,
       };
       const res = await apiFetch("/repo", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": localStorage.getItem("token") || ""
+          Authorization: localStorage.getItem("token"),
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
       const text = await res.text();
       console.log("创建仓库响应:", text);
@@ -102,7 +99,7 @@ function CreateRepo() {
         try {
           const text = await err.text();
           errorMsg = text || errorMsg;
-        } catch { }
+        } catch {}
       } else if (err.message) {
         errorMsg = err.message;
       }
@@ -126,41 +123,20 @@ function CreateRepo() {
               <Label htmlFor="name">
                 仓库名称 <Required>*</Required>
               </Label>
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="my-awesome-project"
-                required
-              />
+              <Input id="name" name="name" type="text" value={formData.name} onChange={handleChange} placeholder="my-awesome-project" required />
               {errors.name && <ErrorText>{errors.name}</ErrorText>}
               <HelpText>仓库名称必须是唯一的</HelpText>
             </FormGroup>
             <FormGroup>
               <Label htmlFor="description">描述（可选）</Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder="简短描述您的项目..."
-                rows={3}
-              />
+              <Textarea id="description" name="description" value={formData.description} onChange={handleChange} placeholder="简短描述您的项目..." rows={3} />
             </FormGroup>
           </FormSection>
           <FormSection>
             <SectionTitle>可见性</SectionTitle>
             <VisibilityOptions>
               <VisibilityOption>
-                <VisibilityRadio
-                  type="radio"
-                  name="isPrivate"
-                  value="false"
-                  checked={!formData.isPrivate}
-                  onChange={() => setFormData((prev) => ({ ...prev, isPrivate: false }))}
-                />
+                <VisibilityRadio type="radio" name="isPrivate" value="false" checked={!formData.isPrivate} onChange={() => setFormData((prev) => ({ ...prev, isPrivate: false }))} />
                 <VisibilityContent>
                   <VisibilityIcon>
                     <FaBook size={16} />
@@ -172,13 +148,7 @@ function CreateRepo() {
                 </VisibilityContent>
               </VisibilityOption>
               <VisibilityOption>
-                <VisibilityRadio
-                  type="radio"
-                  name="isPrivate"
-                  value="true"
-                  checked={formData.isPrivate}
-                  onChange={() => setFormData((prev) => ({ ...prev, isPrivate: true }))}
-                />
+                <VisibilityRadio type="radio" name="isPrivate" value="true" checked={formData.isPrivate} onChange={() => setFormData((prev) => ({ ...prev, isPrivate: true }))} />
                 <VisibilityContent>
                   <VisibilityIcon>
                     <FaLock size={16} />
@@ -195,12 +165,7 @@ function CreateRepo() {
             <SectionTitle>初始化仓库</SectionTitle>
             <CheckboxGroup>
               <CheckboxOption>
-                <Checkbox
-                  type="checkbox"
-                  name="initializeWithReadme"
-                  checked={formData.initializeWithReadme}
-                  onChange={handleChange}
-                />
+                <Checkbox type="checkbox" name="initializeWithReadme" checked={formData.initializeWithReadme} onChange={handleChange} />
                 <CheckboxLabel>
                   <FaCheck size={12} />
                   添加 README 文件
@@ -210,12 +175,7 @@ function CreateRepo() {
             </CheckboxGroup>
             <FormGroup>
               <Label htmlFor="gitignoreTemplate">添加 .gitignore</Label>
-              <Select
-                id="gitignoreTemplate"
-                name="gitignoreTemplate"
-                value={formData.gitignoreTemplate}
-                onChange={handleChange}
-              >
+              <Select id="gitignoreTemplate" name="gitignoreTemplate" value={formData.gitignoreTemplate} onChange={handleChange}>
                 <option value="">选择模板</option>
                 <option value="Node">Node</option>
                 <option value="Python">Python</option>

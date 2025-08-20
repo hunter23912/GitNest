@@ -36,18 +36,18 @@ const Login = () => {
       if (resp && resp.code === 0) {
         const userObj = {
           username: username,
-          userid: resp.data.userid
-        }
+          userid: resp.data.userid,
+        };
         if (remember) {
-          localStorage.setItem("token", resp.data.token);
-          console.log("token", resp.data.token);
+          localStorage.setItem("token", resp.data);
+          console.log("token", resp.data);
         } else {
-          sessionStorage.setItem("token", resp.data.token);
+          sessionStorage.setItem("token", resp.data);
         }
-        localStorage.setItem("user", JSON.stringify(userObj));
+        // localStorage.setItem("user", JSON.stringify(userObj));
         // 通知当前tab中的监听器，更新用户状态
-        window.dispatchEvent(new Event("user-change"));
-        navigate("/");
+        // window.dispatchEvent(new Event("user-change"));
+        navigate("/profile");
         const user = localStorage.getItem("user");
         console.log("登录成功", user);
       } else {

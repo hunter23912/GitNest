@@ -8,6 +8,7 @@ import Search from "../pages/Search";
 import Repos from "../pages/Repos";
 import CreateRepo from "../pages/CreateRepo";
 import RepoDetail from "../pages/RepoDetail";
+import CreateFile from "../pages/CreateFile";
 import About from "../pages/About";
 import NotFound from "../pages/NotFound";
 import AIAssistant from "../pages/AIAssistant";
@@ -58,7 +59,7 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: "/user/:username",
+    path: "/profile",
     element: (
       <Layout>
         <Profile />
@@ -74,10 +75,18 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: "/repo/:username/:reponame",
+    path: "/:username/:reponame",
     element: (
       <Layout>
         <RepoDetail />
+      </Layout>
+    ),
+  },
+  {
+    path: "/repo/create-file",
+    element: (
+      <Layout>
+        <CreateFile />
       </Layout>
     ),
   },
