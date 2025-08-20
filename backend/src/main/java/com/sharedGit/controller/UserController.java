@@ -49,7 +49,10 @@ public class UserController {
             claims.put("userid", loginuser.getUserid());
             claims.put("username", loginuser.getUsername());
             String token = JwtUtil.genToken(claims);
-            return Result.success(token);
+            Map<String, Object> data = new HashMap<>();
+            data.put("token", token);
+            data.put("userid", loginuser.getUserid());
+            return Result.success(data);
         } else {
             return Result.error("密码错误！");
         }
