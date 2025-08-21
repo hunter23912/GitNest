@@ -36,19 +36,16 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public void addFile(Integer repoid, String path, Integer editor, String filename, String message) {
-        //先在file表中添加并获取自增的fileid，然后添加version表
-        if(editor!=null) {
-            Integer fileid=fileMapper.addFile(repoid);
-            fileMapper.addVersion(fileid,repoid, path, editor,0,filename,message);
+        File file = new File();
+        file.setRepoid(repoid);
+        fileMapper.addFile(file); // 主键自动回填到 file.fileid
 
-        }
-        else{
-            Map<String,Object> claims =ThreadLocalUtil.get();
-            Integer userid=(Integer)claims.get("userid");
-            Integer fileid=fileMapper.addFile(repoid);
-            fileMapper.addVersion(fileid,repoid, path, userid,0,filename,message);
-        }
+        Integer fileid = file.getFileid();
+        Map<String, Object> claims = (Map<String, Object>) ThreadLocalUtil.get();
+        Integer user = (editor != null) ? editor : (Integer) claims.get("userid");
+        fileMapper.addVersion(fileid, path, user, 0, filename, message);
     }
+
     @Override
     public synchronized void updatecode(Integer fileid, String newcode,Integer editor,String message) throws IOException {
         File oldFile=fileMapper.findByFileid(fileid);
@@ -63,7 +60,7 @@ public class FileServiceImpl implements FileService {
         if(message!=null){
             oldFile.setMessage(message);
         }
-        fileMapper.addVersion(fileid,oldFile.getRepoid(),newpath,oldFile.getEditor(),version+1,oldFile.getFilename(),message);
+        fileMapper.addVersion(fileid,newpath,oldFile.getEditor(),version+1,oldFile.getFilename(),message);
         fileMapper.updateFile(fileid,version+1);
     }
 
@@ -80,7 +77,7 @@ public class FileServiceImpl implements FileService {
         else{
             file.setMessage("");
         }
-        fileMapper.addVersion(fileid,file.getRepoid(),newFilePath,file.getEditor(),version+1,filename,message);
+        fileMapper.addVersion(fileid,newFilePath,file.getEditor(),version+1,filename,message);
         fileMapper.updateFile(fileid,version+1);
     }
 
@@ -116,7 +113,7 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public void restoreVerion(Integer fileid, Integer version) {
+    public void restoreVersion(Integer fileid, Integer version) {
         if(version==-1){
             fileMapper.restoreVersionAll(fileid);
         }

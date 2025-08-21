@@ -21,7 +21,7 @@ public interface UserMapper {
     @Insert("insert into user (username,password,email) values (#{username},#{password},#{email})")
     void register(String username, String password, String email);
 
-    @Update("update user set username=#{username},role=#{role},email=#{email},update_time=now() where userid={userid}")
+    @Update("update user set username=#{username},email=#{email},age=#{age},sex=#{sex},telephone=#{telephone},nation=#{nation} where userid={userid}")
     void updateInfo(User user);
 
     @Update("update user set password=#{newpassword} where userid=#{userid}")

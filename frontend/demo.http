@@ -22,3 +22,28 @@ Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGFpbXMiOnsidXNlcmlkIjox
   "language": "JavaScript",
   "stars": 0
 }
+
+### 重命名文件
+PUT http://localhost:8080/file
+Content-Type: application/json
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGFpbXMiOnsidXNlcmlkIjoxLCJ1c2VybmFtZSI6IndqaCJ9LCJleHAiOjE3NTU3Njg3OTB9.ON57o3za2QXtArYtG-Vz3HK2UA5VbhkqNAxiKHcdPv4
+
+{
+  "fileid": 1,
+  "newFilePath": "/my-demo-repo/README-renamed.md",
+  "editor": 1,
+  "filename": "README-renamed.md",
+  "message": "重命名文件为 README-renamed.md"
+}
+
+### 修改文件
+POST http://localhost:8080/file/update
+Content-Type: application/json
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGFpbXMiOnsidXNlcmlkIjoxLCJ1c2VybmFtZSI6IndqaCJ9LCJleHAiOjE3NTU3Njg3OTB9.ON57o3za2QXtArYtG-Vz3HK2UA5VbhkqNAxiKHcdPv4
+
+{
+  "fileid": 1,
+  "newcode": "# 新内容\n这里是修改后的内容",
+  "editor": 1,
+  "message": "更新文件内容"
+}

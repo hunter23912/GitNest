@@ -13,9 +13,13 @@ public class User {
     private String username;
     @JsonIgnore
     private String password;
-    private String role;
+    //    private String role;
     private String email;
     private LocalDateTime createTime;
-    private LocalDateTime updateTime;
+
+    private String sex;
+    private Integer age;
+    private String telephone;
+    private String nation;
 
 }

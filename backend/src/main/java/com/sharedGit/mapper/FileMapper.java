@@ -8,8 +8,8 @@ import java.util.List;
 @Mapper
 public interface FileMapper {
 
-    @Select("select * from file inner join version on file.fileid=version.fileid and file.version=version.version where fileid=#{fileid}")
-    File findByFileid(Integer fileid);  //根据file表获取该fileid获取信息
+    @Select("select * from file inner join version on file.fileid=version.fileid and file.version=version.version where file.fileid=#{fileid}")
+    File findByFileid(Integer fileid);
 
     @Select("select * from file inner join version on file.fileid=version.fileid and file.version=version.version where userid=#{userid}")
     List<File> getFileListByUserid(Integer userid);
@@ -17,14 +17,14 @@ public interface FileMapper {
     @Select("select * from file inner join version on file.fileid=version.fileid and file.version=version.version where repoid=#{repoid}")
     List<File> getFileListByRepoid(Integer repoid);
 
-    @Insert("insert into version (fileid,repoid,path,ediotr,version,filename,message) values (#{fileid},#{repoid},#{path},#{editor},#{verion},{filename},#{message})")
-    void addVersion(Integer fileid,Integer repoid, String path, Integer editor, Integer version, String filename, String message);
+    @Insert("insert into version (fileid,path,editor,version,filename,message) values (#{fileid},#{path},#{editor},#{version},#{filename},#{message})")
+    void addVersion(Integer fileid, String path, Integer editor, Integer version, String filename, String message);
 
     @Insert("insert into file (repoid) values (#{repoid})")
     @Options(useGeneratedKeys = true, keyProperty = "fileid")
-    Integer addFile(Integer repoid);
+    Integer addFile(File file);
 
-    @Update("update verion set isrubbish= true where fileid=#{fileid}")
+    @Update("update version set isrubbish= true where fileid=#{fileid}")
     void goRubbishFile(Integer fileid);
 
     @Delete("delete from file where version=-1")

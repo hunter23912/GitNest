@@ -79,6 +79,7 @@ function CreateFile() {
     try {
       const userStr = localStorage.getItem("user");
       const user = userStr ? JSON.parse(userStr) : {};
+      console.log("提交文件时 repoid:", repoid);
 
       const res = await apiFetch("/file", {
         method: "POST",
@@ -87,7 +88,7 @@ function CreateFile() {
           Authorization: localStorage.getItem("token"),
         },
         body: JSON.stringify({
-          repoid: parseInt(repoid),
+          repoid: repoid,
           path: uploadedPath || path.trim() || "/", // 用第一步上传返回的路径
           filename: filename.trim(),
           message: message.trim() || `Add ${filename}`,
@@ -131,8 +132,8 @@ function CreateFile() {
         <FormGroup>
           <Label>上传文件（可选）</Label>
           <FileUploadContainer>
-            <FileInput type="file" id="fileUpload" onChange={handleFileUpload} disabled={isUploading} />
-            <FileUploadLabel htmlFor="fileUpload" disabled={isUploading}>
+            <FileInput type='file' id='fileUpload' onChange={handleFileUpload} disabled={isUploading} />
+            <FileUploadLabel htmlFor='fileUpload' disabled={isUploading}>
               <FaCloudUploadAlt size={24} />
               <span>{isUploading ? "上传中..." : "点击选择文件"}</span>
             </FileUploadLabel>
@@ -142,34 +143,34 @@ function CreateFile() {
 
         <FormGroup>
           <Label>文件名 *</Label>
-          <Input type="text" value={path} onChange={(e) => setPath(e.target.value)} placeholder="/ (根目录)" disabled={!!uploadedPath} />
+          <Input type='text' value={path} onChange={(e) => setPath(e.target.value)} placeholder='/ (根目录)' disabled={!!uploadedPath} />
         </FormGroup>
 
         <FormGroup>
           <Label>文件路径</Label>
-          <Input type="text" value={uploadedPath || path} onChange={(e) => setPath(e.target.value)} placeholder="/ (根目录)" disabled={!!uploadedPath} />
+          <Input type='text' value={uploadedPath || path} onChange={(e) => setPath(e.target.value)} placeholder='/ (根目录)' disabled={!!uploadedPath} />
           <Hint>{uploadedPath ? "已使用上传文件的路径" : "留空默认为根目录"}</Hint>
         </FormGroup>
 
         <FormGroup>
           <Label>提交说明</Label>
-          <Input type="text" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="添加新文件" />
+          <Input type='text' value={message} onChange={(e) => setMessage(e.target.value)} placeholder='添加新文件' />
         </FormGroup>
 
         {!uploadedPath && (
           <FormGroup>
             <Label>文件内容</Label>
-            <TextArea value={content} onChange={(e) => setContent(e.target.value)} placeholder="在此输入文件内容..." rows={12} />
+            <TextArea value={content} onChange={(e) => setContent(e.target.value)} placeholder='在此输入文件内容...' rows={12} />
           </FormGroup>
         )}
 
         {error && <ErrorMessage>{error}</ErrorMessage>}
 
         <ButtonGroup>
-          <CancelButton type="button" onClick={handleCancel}>
+          <CancelButton type='button' onClick={handleCancel}>
             取消
           </CancelButton>
-          <SubmitButton type="submit" disabled={isLoading || !filename.trim()}>
+          <SubmitButton type='submit' disabled={isLoading || !filename.trim()}>
             <FaUpload size={14} />
             {isLoading ? "创建中..." : "创建文件"}
           </SubmitButton>

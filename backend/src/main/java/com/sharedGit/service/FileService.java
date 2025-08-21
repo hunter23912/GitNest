@@ -24,7 +24,7 @@ public interface FileService {
 
     List<File> getRubbishList();
 
-    void restoreVerion(Integer fileid, Integer version);
+    void restoreVersion(Integer fileid, Integer version);
 
     void updatecode(Integer fileid, String newcode,Integer editor,String message) throws IOException;
 }
