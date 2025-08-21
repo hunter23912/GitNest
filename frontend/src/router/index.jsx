@@ -9,6 +9,7 @@ import Repos from "../pages/Repos";
 import CreateRepo from "../pages/CreateRepo";
 import RepoDetail from "../pages/RepoDetail";
 import CreateFile from "../pages/CreateFile";
+import FilePreview from "../pages/FilePreview";
 import About from "../pages/About";
 import NotFound from "../pages/NotFound";
 import AIAssistant from "../pages/AIAssistant";
@@ -79,6 +80,14 @@ export const router = createBrowserRouter([
     element: (
       <Layout>
         <RepoDetail />
+      </Layout>
+    ),
+  },
+  {
+    path: "/:username/:reponame/file-preview",
+    element: (
+      <Layout>
+        <FilePreview />
       </Layout>
     ),
   },

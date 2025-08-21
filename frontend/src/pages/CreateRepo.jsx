@@ -120,23 +120,23 @@ function CreateRepo() {
           <FormSection>
             <SectionTitle>基本信息</SectionTitle>
             <FormGroup>
-              <Label htmlFor="name">
+              <Label htmlFor='name'>
                 仓库名称 <Required>*</Required>
               </Label>
-              <Input id="name" name="name" type="text" value={formData.name} onChange={handleChange} placeholder="my-awesome-project" required />
+              <Input id='name' name='name' type='text' value={formData.name} onChange={handleChange} placeholder='my-awesome-project' required />
               {errors.name && <ErrorText>{errors.name}</ErrorText>}
               <HelpText>仓库名称必须是唯一的</HelpText>
             </FormGroup>
             <FormGroup>
-              <Label htmlFor="description">描述（可选）</Label>
-              <Textarea id="description" name="description" value={formData.description} onChange={handleChange} placeholder="简短描述您的项目..." rows={3} />
+              <Label htmlFor='description'>描述（可选）</Label>
+              <Textarea id='description' name='description' value={formData.description} onChange={handleChange} placeholder='简短描述您的项目...' rows={3} />
             </FormGroup>
           </FormSection>
           <FormSection>
             <SectionTitle>可见性</SectionTitle>
             <VisibilityOptions>
               <VisibilityOption>
-                <VisibilityRadio type="radio" name="isPrivate" value="false" checked={!formData.isPrivate} onChange={() => setFormData((prev) => ({ ...prev, isPrivate: false }))} />
+                <VisibilityRadio type='radio' name='isPrivate' value='false' checked={!formData.isPrivate} onChange={() => setFormData((prev) => ({ ...prev, isPrivate: false }))} />
                 <VisibilityContent>
                   <VisibilityIcon>
                     <FaBook size={16} />
@@ -148,7 +148,7 @@ function CreateRepo() {
                 </VisibilityContent>
               </VisibilityOption>
               <VisibilityOption>
-                <VisibilityRadio type="radio" name="isPrivate" value="true" checked={formData.isPrivate} onChange={() => setFormData((prev) => ({ ...prev, isPrivate: true }))} />
+                <VisibilityRadio type='radio' name='isPrivate' value='true' checked={formData.isPrivate} onChange={() => setFormData((prev) => ({ ...prev, isPrivate: true }))} />
                 <VisibilityContent>
                   <VisibilityIcon>
                     <FaLock size={16} />
@@ -165,7 +165,7 @@ function CreateRepo() {
             <SectionTitle>初始化仓库</SectionTitle>
             <CheckboxGroup>
               <CheckboxOption>
-                <Checkbox type="checkbox" name="initializeWithReadme" checked={formData.initializeWithReadme} onChange={handleChange} />
+                <Checkbox type='checkbox' name='initializeWithReadme' checked={formData.initializeWithReadme} onChange={handleChange} />
                 <CheckboxLabel>
                   <FaCheck size={12} />
                   添加 README 文件
@@ -174,36 +174,36 @@ function CreateRepo() {
               <CheckboxDescription>这是告诉其他人您的仓库用途的好地方</CheckboxDescription>
             </CheckboxGroup>
             <FormGroup>
-              <Label htmlFor="gitignoreTemplate">添加 .gitignore</Label>
-              <Select id="gitignoreTemplate" name="gitignoreTemplate" value={formData.gitignoreTemplate} onChange={handleChange}>
-                <option value="">选择模板</option>
-                <option value="Node">Node</option>
-                <option value="Python">Python</option>
-                <option value="Java">Java</option>
-                <option value="Go">Go</option>
-                <option value="React">React</option>
-                <option value="Vue">Vue</option>
+              <Label htmlFor='gitignoreTemplate'>添加 .gitignore</Label>
+              <Select id='gitignoreTemplate' name='gitignoreTemplate' value={formData.gitignoreTemplate} onChange={handleChange}>
+                <option value=''>选择模板</option>
+                <option value='Node'>Node</option>
+                <option value='Python'>Python</option>
+                <option value='Java'>Java</option>
+                <option value='Go'>Go</option>
+                <option value='React'>React</option>
+                <option value='Vue'>Vue</option>
               </Select>
               <HelpText>选择要忽略的文件类型</HelpText>
             </FormGroup>
             <FormGroup>
-              <Label htmlFor="license">选择许可证</Label>
-              <Select id="license" name="license" value={formData.license} onChange={handleChange}>
-                <option value="">无许可证</option>
-                <option value="MIT">MIT License</option>
-                <option value="Apache-2.0">Apache License 2.0</option>
-                <option value="GPL-3.0">GNU GPL v3</option>
-                <option value="BSD-3-Clause">BSD 3-Clause</option>
+              <Label htmlFor='license'>选择许可证</Label>
+              <Select id='license' name='license' value={formData.license} onChange={handleChange}>
+                <option value=''>无许可证</option>
+                <option value='MIT'>MIT License</option>
+                <option value='Apache-2.0'>Apache License 2.0</option>
+                <option value='GPL-3.0'>GNU GPL v3</option>
+                <option value='BSD-3-Clause'>BSD 3-Clause</option>
               </Select>
               <HelpText>许可证告诉其他人他们可以对您的代码做什么</HelpText>
             </FormGroup>
           </FormSection>
           {errors.general && <ErrorMessage>{errors.general}</ErrorMessage>}
           <FormActions>
-            <CancelButton type="button" onClick={() => navigate("/repos")}>
+            <CancelButton type='button' onClick={() => navigate("/repos")}>
               取消
             </CancelButton>
-            <SubmitButton type="submit" disabled={loading}>
+            <SubmitButton type='submit' disabled={loading}>
               {loading ? "创建中..." : "创建仓库"}
             </SubmitButton>
           </FormActions>
