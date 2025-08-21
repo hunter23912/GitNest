@@ -54,7 +54,7 @@ public class RepoServiceImpl implements RepoService {
     }
 
     @Override
-    public List<File> search(String keyword) {
+    public List<Repo> search(String keyword) {
         String pattern="%"+keyword+"%";
         return repoMapper.search(pattern);
     }

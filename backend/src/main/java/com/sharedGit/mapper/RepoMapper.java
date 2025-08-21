@@ -34,6 +34,6 @@ public interface RepoMapper {
     @Update("update repo set stars=#{stars} where repoid=#{repoid}")
     void setStars(Integer repoid, Integer stars);
 
-    @Select("select * from repo where (reponame like #{pattern} or description like #{pattern}) and isprivate=false")
-    List<File> search(String pattern);
+    @Select("select * from repo inner join user on ownerid=userid where (reponame like #{pattern} or description like #{pattern}) and isprivate=false")
+    List<Repo> search(String pattern);
 }

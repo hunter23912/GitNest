@@ -50,9 +50,9 @@ public class RepoController {
     }
 
     @GetMapping("/search")
-    public Result<List<File>> search(String keyword){
-        List<File> fileList=repoService.search(keyword);
-        return Result.success(fileList);
+    public Result<List<Repo>> search(String keyword){
+        List<Repo> repoList=repoService.search(keyword);
+        return Result.success(repoList);
     }
 
 

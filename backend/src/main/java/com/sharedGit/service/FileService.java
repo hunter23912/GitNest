@@ -27,4 +27,6 @@ public interface FileService {
     void restoreVersion(Integer fileid, Integer version);
 
     void updatecode(Integer fileid, String newcode,Integer editor,String message) throws IOException;
+
+    File findByFileid(Integer fileid);
 }
