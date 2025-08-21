@@ -18,5 +18,5 @@ public interface RepoService {
 
     Integer updateStars(Integer repoid, Integer op);
 
-    List<File> search(String keyword);
+    List<Repo> search(String keyword);
 }

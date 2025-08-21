@@ -13,6 +13,7 @@ public class Repo {
     private String language;
     private Integer stars;
     private Integer ownerid;
+    private String username;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

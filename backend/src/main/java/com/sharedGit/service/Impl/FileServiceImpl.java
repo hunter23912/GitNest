@@ -24,13 +24,13 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public List<File> getFileListByUserid(Integer userid) {
-        List<File> fileList=fileMapper.getFileListByUserid(userid);
+        List<File> fileList = fileMapper.getFileListByUserid(userid);
         return fileList;
     }
 
     @Override
     public List<File> getFileListByRepoid(Integer repoid) {
-        List<File> fileList=fileMapper.getFileListByRepoid(repoid);
+        List<File> fileList = fileMapper.getFileListByRepoid(repoid);
         return fileList;
     }
 
@@ -47,57 +47,61 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public synchronized void updatecode(Integer fileid, String newcode,Integer editor,String message) throws IOException {
-        File oldFile=fileMapper.findByFileid(fileid);
-        String oldpath=oldFile.getPath();
-        String newpath="./files/"+ UUID.randomUUID().toString() +oldpath.substring(oldpath.lastIndexOf("."));
-        Path path= Paths.get(newpath);
-        Files.writeString(path,newcode, StandardOpenOption.CREATE);
-        Integer version=oldFile.getVersion();
-        if(editor!=null){
+    public synchronized void updatecode(Integer fileid, String newcode, Integer editor, String message) throws IOException {
+        File oldFile = fileMapper.findByFileid(fileid);
+        String oldpath = oldFile.getPath();
+        String newpath = "./files/" + UUID.randomUUID().toString() + oldpath.substring(oldpath.lastIndexOf("."));
+        Path path = Paths.get(newpath);
+        Files.writeString(path, newcode, StandardOpenOption.CREATE);
+        Integer version = oldFile.getVersion();
+        if (editor != null) {
             oldFile.setEditor(editor);
         }
-        if(message!=null){
+        if (message != null) {
             oldFile.setMessage(message);
         }
-        fileMapper.addVersion(fileid,newpath,oldFile.getEditor(),version+1,oldFile.getFilename(),message);
-        fileMapper.updateFile(fileid,version+1);
+        fileMapper.addVersion(fileid, newpath, oldFile.getEditor(), version + 1, oldFile.getFilename(), message);
+        fileMapper.updateFile(fileid, version + 1);
+    }
+
+    @Override
+    public File findByFileid(Integer fileid) {
+        return fileMapper.findByFileid(fileid);
     }
 
     @Override
     public synchronized void updateFile(Integer fileid, String newFilePath, Integer editor, String filename, String message) {
-        File file=fileMapper.findByFileid(fileid);
-        Integer version=file.getVersion();
-        if(editor!=null){
+        File file = fileMapper.findByFileid(fileid);
+        Integer version = file.getVersion();
+        if (editor != null) {
             file.setEditor(editor);
         }
-        if(message!=null){
+        if (message != null) {
             file.setMessage(message);
-        }
-        else{
+        } else {
             file.setMessage("");
         }
-        fileMapper.addVersion(fileid,newFilePath,file.getEditor(),version+1,filename,message);
-        fileMapper.updateFile(fileid,version+1);
+        fileMapper.addVersion(fileid, newFilePath, file.getEditor(), version + 1, filename, message);
+        fileMapper.updateFile(fileid, version + 1);
     }
 
     @Override
     public void deleteFile(Integer fileid) {
         //将isrubbish置为true，然后将version置为-1
         fileMapper.goRubbishFile(fileid);
-        fileMapper.updateFile(fileid,-1);
+        fileMapper.updateFile(fileid, -1);
     }
 
     @Override
     public List<File> getHistoryVersionList(Integer fileid) {
-        List<File> fileList=fileMapper.getFileListByFileid(fileid);
+        List<File> fileList = fileMapper.getFileListByFileid(fileid);
         return fileList;
     }
 
     @Override
     public void goback(Integer fileid, Integer version) {
-        fileMapper.updateFile(fileid,version);
-        fileMapper.gobackVersion(fileid,version);
+        fileMapper.updateFile(fileid, version);
+        fileMapper.gobackVersion(fileid, version);
     }
 
     @Override
@@ -108,20 +112,19 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public List<File> getRubbishList() {
-        List<File> rubbishList=fileMapper.getRubbishList();
+        List<File> rubbishList = fileMapper.getRubbishList();
         return rubbishList;
     }
 
     @Override
     public void restoreVersion(Integer fileid, Integer version) {
-        if(version==-1){
+        if (version == -1) {
             fileMapper.restoreVersionAll(fileid);
+        } else {
+            fileMapper.restoreVersion(fileid, version);
         }
-        else{
-            fileMapper.restoreVersion(fileid,version);
-        }
-        Integer latestVersion=fileMapper.findLatestVersion(fileid);
-        fileMapper.updateFile(fileid,latestVersion);
+        Integer latestVersion = fileMapper.findLatestVersion(fileid);
+        fileMapper.updateFile(fileid, latestVersion);
     }
 
 }

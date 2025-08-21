@@ -11,7 +11,7 @@ const Repos = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [sortBy, setSortBy] = useState("updated");
-  const [isLoading, setIsLoading] = useState(true); // 新增
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {

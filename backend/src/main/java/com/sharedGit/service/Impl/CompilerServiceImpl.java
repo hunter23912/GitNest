@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,19 +19,17 @@ import java.util.regex.Pattern;
 @Service
 public class CompilerServiceImpl implements CompilerService {
 
-    private static final String TEMP_DIR_C = "temp/";
+    private static final String TEMP_DIR_C = "temp_C/";
     private static final String CPP_EXTENSION = ".cpp";
     private static final String EXE_EXTENSION = ".exe";
-    private static final String TEMP_DIR_Java = "temp_java/";
     private static final String JAVA_EXTENSION = ".java";
     private static final String CLASS_EXTENSION = ".class";
 
     @Override
-    public File compilecodeC(String code) throws Exception {
+    public String compilecodeC(String code, String baseName) throws Exception {
         // 创建临时目录（如果不存在）
-        String baseName = "code_" + System.currentTimeMillis() + "_" + UUID.randomUUID();
-        Path tempDir = Paths.get(TEMP_DIR_C);
-        System.out.println(tempDir);
+        String basePath = TEMP_DIR_C + baseName;
+        Path tempDir = Paths.get(basePath);
         if (!Files.exists(tempDir)) {
             Files.createDirectories(tempDir);
         }
@@ -77,29 +76,31 @@ public class CompilerServiceImpl implements CompilerService {
             throw new Exception("可执行文件未生成");
         }
 
-        return exeFile;
-    }
+        try {
+            Process runProcess = new ProcessBuilder(exeFile.getAbsolutePath())
+                    .directory(tempDir.toFile())
+                    .start();
 
-    @Override
-    public void cleanupFileC(File file) {
-        if (file != null && file.exists()) {
-            try {
-                Files.deleteIfExists(file.toPath());
+            // 设置超时（10秒）
+            boolean finished2 = runProcess.waitFor(10, TimeUnit.SECONDS);
 
-                // 尝试删除对应的.cpp文件
-                String cppPath = file.getAbsolutePath().replace(EXE_EXTENSION, CPP_EXTENSION);
-                Path cppFilePath = Paths.get(cppPath);
-                Files.deleteIfExists(cppFilePath);
-            } catch (IOException e) {
-                System.err.println("删除文件失败: " + e.getMessage());
+            if (!finished2) {
+                runProcess.destroy();
+                throw new Exception("执行超时");
             }
+
+            // 获取执行结果
+            String output = readProcessOutput(runProcess);
+//            int exitCode = runProcess.exitValue();
+            return output;
+        } catch (Exception e) {
+            return ("执行错误: " + e.getMessage());
         }
     }
 
     @Override
-    public File compileCodeJava(String code) throws Exception {
-        String baseName = "code_" + System.currentTimeMillis() + "_" + UUID.randomUUID();
-        Path tempDir = Paths.get(TEMP_DIR_Java+"/"+baseName);
+    public String compileCodeJava(String code, String basePath) throws Exception {
+        Path tempDir = Paths.get(basePath);
         if (!Files.exists(tempDir)) {
             Files.createDirectories(tempDir);
         }
@@ -147,7 +148,25 @@ public class CompilerServiceImpl implements CompilerService {
             throw new Exception(".class文件未生成");
         }
 
-        return classFile.toFile();
+        Process runProcess = new ProcessBuilder(
+                "java",
+                "-cp", tempDir.toString(),
+                className
+        ).start();
+
+        // 设置超时（10秒）
+        boolean finished2 = runProcess.waitFor(10, TimeUnit.SECONDS);
+
+        if (!finished2) {
+            runProcess.destroy();
+            throw new Exception("执行超时");
+        }
+
+        // 获取执行结果
+        String output = readProcessOutput(runProcess);
+//        int exitCode = runProcess.exitValue();
+
+        return output;
     }
 
     @Override
@@ -169,12 +188,12 @@ public class CompilerServiceImpl implements CompilerService {
     }
 
     @Override
-    public void cleanupFilesJava(File file) {
-        if (file != null) {
+    public void cleanupFiles(String basePath) {
+        if (basePath != null) {
             try {
-                Path parentDir = file.toPath().getParent();
+                Path tempDir = Paths.get((basePath));
                 // 删除所有临时文件
-                Files.walk(parentDir)
+                Files.walk(tempDir)
                         .sorted(Comparator.reverseOrder())
                         .map(Path::toFile)
                         .forEach(File::delete);
@@ -182,6 +201,20 @@ public class CompilerServiceImpl implements CompilerService {
             } catch (IOException e) {
                 System.err.println("清理文件失败: " + e.getMessage());
             }
+        }
+    }
+
+    private String readProcessOutput(Process process) throws IOException {
+        try (InputStream inputStream = process.getInputStream();
+             InputStream errorStream = process.getErrorStream()) {
+
+            String output = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            String error = new String(errorStream.readAllBytes(), StandardCharsets.UTF_8);
+
+            if (!error.isEmpty()) {
+                return output + "\n" + error;
+            }
+            return output;
         }
     }
 }

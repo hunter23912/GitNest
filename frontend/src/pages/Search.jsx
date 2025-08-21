@@ -1,10 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { FaSearch, FaStar, FaCodeBranch, FaFilter } from "react-icons/fa";
-// 纯 JS/JSX 版本
+import { apiFetch } from "../utils/request";
+
+async function searchRepos(keyword) {
+  const res = await apiFetch(`/repo/search?keyword=${keyword}`, {
+    method: "GET",
+    headers: {
+      Authorization: localStorage.getItem("token"),
+    },
+  });
+  const data = await res.json();
+  return data;
+}
+
 const Search = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [query, setQuery] = useState(searchParams.get("q") || "");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -15,65 +27,7 @@ const Search = () => {
     type: "all",
   });
   const [showFilters, setShowFilters] = useState(false);
-
-  // 模拟搜索结果数据
-  const mockResults = [
-    {
-      id: 1,
-      name: "react",
-      description: "A declarative, efficient, and flexible JavaScript library for building user interfaces.",
-      language: "JavaScript",
-      stars: 201000,
-      forks: 41000,
-      isPrivate: false,
-      updatedAt: new Date("2024-01-20"),
-      owner: "facebook",
-    },
-    {
-      id: 2,
-      name: "vue",
-      description: "Vue.js is a progressive, incrementally-adoptable JavaScript framework.",
-      language: "TypeScript",
-      stars: 204000,
-      forks: 33000,
-      isPrivate: false,
-      updatedAt: new Date("2024-01-18"),
-      owner: "vuejs",
-    },
-    {
-      id: 3,
-      name: "awesome-python",
-      description: "A curated list of awesome Python frameworks, libraries, software and resources.",
-      language: "Python",
-      stars: 158000,
-      forks: 22000,
-      isPrivate: false,
-      updatedAt: new Date("2024-01-15"),
-      owner: "vinta",
-    },
-    {
-      id: 4,
-      name: "tensorflow",
-      description: "An open source machine learning library for JavaScript.",
-      language: "TypeScript",
-      stars: 175000,
-      forks: 88000,
-      isPrivate: false,
-      updatedAt: new Date("2024-01-12"),
-      owner: "tensorflow",
-    },
-    {
-      id: 5,
-      name: "express",
-      description: "Fast, unopinionated, minimalist web framework for Node.js.",
-      language: "JavaScript",
-      stars: 63000,
-      forks: 13000,
-      isPrivate: false,
-      updatedAt: new Date("2024-01-10"),
-      owner: "expressjs",
-    },
-  ];
+  const navigate = useNavigate();
 
   useEffect(() => {
     const searchQuery = searchParams.get("q");
@@ -85,56 +39,17 @@ const Search = () => {
 
   const performSearch = async (searchQuery) => {
     if (!searchQuery.trim()) return;
-
     setLoading(true);
 
-    // 模拟 API 延迟
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    // 过滤结果
-    let filtered = mockResults.filter(
-      (repo) =>
-        repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        repo.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        repo.owner.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    // 应用过滤器
-    if (filters.language) {
-      filtered = filtered.filter((repo) => repo.language === filters.language);
+    // 调用后端接口
+    const data = await searchRepos(searchQuery);
+    console.log("搜索结果:", data);
+    if (data && data.code === 0 && Array.isArray(data.data)) {
+      setResults(data.data);
+    } else {
+      setResults([]);
     }
-
-    // 排序
-    filtered.sort((a, b) => {
-      let comparison = 0;
-      switch (filters.sort) {
-        case "stars":
-          comparison = b.stars - a.stars;
-          break;
-        case "forks":
-          comparison = b.forks - a.forks;
-          break;
-        case "updated":
-          comparison = b.updatedAt.getTime() - a.updatedAt.getTime();
-          break;
-        case "created":
-          comparison = b.id - a.id; // 简化：用 id 代替创建时间
-          break;
-        default:
-          break;
-      }
-      return filters.order === "asc" ? -comparison : comparison;
-    });
-
-    setResults(filtered);
     setLoading(false);
-  };
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (query.trim()) {
-      setSearchParams({ q: query.trim() });
-    }
   };
 
   const handleFilterChange = (newFilters) => {
@@ -159,6 +74,7 @@ const Search = () => {
   };
 
   const formatNumber = (num) => {
+    if (num == null || isNaN(num)) return "0";
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + "M";
     }
@@ -171,19 +87,7 @@ const Search = () => {
   return (
     <Container>
       <SearchHeader>
-        <SearchForm onSubmit={handleSearch}>
-          <SearchInputContainer>
-            <FaSearch size={18} />
-            <SearchInput
-              type="text"
-              placeholder="搜索仓库..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </SearchInputContainer>
-          <SearchButton type="submit">搜索</SearchButton>
-        </SearchForm>
-
+        {/* 删除页面内搜索框，只保留过滤器 */}
         <FilterSection>
           <FilterToggle onClick={() => setShowFilters(!showFilters)}>
             <FaFilter size={14} />
@@ -194,10 +98,7 @@ const Search = () => {
             <FiltersContainer>
               <FilterGroup>
                 <FilterLabel>编程语言</FilterLabel>
-                <FilterSelect
-                  value={filters.language}
-                  onChange={(e) => handleFilterChange({ language: e.target.value })}
-                >
+                <FilterSelect value={filters.language} onChange={(e) => handleFilterChange({ language: e.target.value })}>
                   <option value="">所有语言</option>
                   <option value="JavaScript">JavaScript</option>
                   <option value="TypeScript">TypeScript</option>
@@ -245,7 +146,12 @@ const Search = () => {
                   <ResultItem key={repo.id}>
                     <RepoHeader>
                       <RepoName>
-                        {repo.owner}/{repo.name}
+                        {repo.owner}
+                        {repo.reponame}
+                      </RepoName>
+                      {/* 点击仓库名跳转到仓库详情页 */}
+                      <RepoName as="span" onClick={() => navigate(`/${repo.owner}/${repo.reponame}?repoid=${repo.id}`)} role="button" aria-label={`打开 ${repo.owner}/${repo.reponame}`}>
+                        {repo.owner}/{repo.reponame}
                       </RepoName>
                       {repo.isPrivate && <PrivateBadge>Private</PrivateBadge>}
                     </RepoHeader>
@@ -265,7 +171,7 @@ const Search = () => {
                         <FaCodeBranch size={12} />
                         {formatNumber(repo.forks)}
                       </RepoForks>
-                      <RepoUpdated>更新于 {repo.updatedAt.toLocaleDateString()}</RepoUpdated>
+                      <RepoUpdated>更新于 {repo.updatedAt ? new Date(repo.updatedAt).toLocaleDateString() : "未知"}</RepoUpdated>
                     </RepoMeta>
                   </ResultItem>
                 ))}

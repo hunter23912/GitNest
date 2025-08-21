@@ -150,7 +150,8 @@ function RepoDetail() {
             const searchParams = new URLSearchParams(location.search);
             const repoid = searchParams.get("repoid");
             navigate(`/repo/create-file?repoid=${repoid}`);
-          }}>
+          }}
+        >
           新建文件
         </NewFileButton>
       </Title>
@@ -165,7 +166,8 @@ function RepoDetail() {
               const searchParams = new URLSearchParams(location.search);
               const repoid = searchParams.get("repoid");
               navigate(`/repo/create-file?repoid=${repoid}`);
-            }}>
+            }}
+          >
             新建文件
           </NewFileButton>
         </EmptyText>
@@ -173,11 +175,11 @@ function RepoDetail() {
         <FilesList>
           {files.map((file) => (
             <FileItem key={file.fileid || file.id}>
-              <FileIcon>{file.path && file.path.endsWith("/") ? <FaFolder size={18} color='#79b8ff' /> : <FaFile size={18} color='#586069' />}</FileIcon>
+              <FileIcon>{file.path && file.path.endsWith("/") ? <FaFolder size={18} color="#79b8ff" /> : <FaFile size={18} color="#586069" />}</FileIcon>
               {renamingId === (file.fileid || file.id) ? (
                 <RenameControls>
                   <input
-                    type='text'
+                    type="text"
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
                     disabled={renameLoading}
@@ -200,7 +202,8 @@ function RepoDetail() {
                       setRenamingId(null);
                       setRenameValue("");
                     }}
-                    disabled={renameLoading}>
+                    disabled={renameLoading}
+                  >
                     取消
                   </DeleteButton>
                 </RenameControls>
@@ -208,8 +211,9 @@ function RepoDetail() {
                 <FileName
                   style={{ cursor: "pointer", color: "#0969da" }}
                   onClick={() => {
-                    navigate(`/${username}/${reponame}/file-preview?path=${encodeURIComponent(file.path)}`);
-                  }}>
+                    navigate(`/${username}/${reponame}/file-preview?fileid=${file.fileid}`);
+                  }}
+                >
                   {file.filename}
                 </FileName>
               )}
@@ -222,7 +226,8 @@ function RepoDetail() {
                   setRenamingId(file.fileid || file.id);
                   setRenameValue(file.filename);
                 }}
-                disabled={renamingId === (file.fileid || file.id)}>
+                disabled={renamingId === (file.fileid || file.id)}
+              >
                 重命名
               </RenameButton>
               <DeleteButton onClick={() => handleDelete(file.fileid || file.id)}>删除</DeleteButton>
