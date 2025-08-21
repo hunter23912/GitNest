@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { FaPlus, FaSearch, FaStar, FaCodeBranch, FaBook, FaLock } from "react-icons/fa";
+import { apiFetch } from "../utils/request"; // 新增
+
 // 纯 JS/JSX 版本
 const Repos = () => {
   const [user, setUser] = useState(null);
@@ -9,95 +11,68 @@ const Repos = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [sortBy, setSortBy] = useState("updated");
+  const [isLoading, setIsLoading] = useState(true); // 新增
   const navigate = useNavigate();
 
-  // 模拟仓库数据
-  const mockRepositories = [
-    {
-      id: 1,
-      name: "my-awesome-project",
-      description: "一个很棒的React项目，包含现代化的UI组件和状态管理",
-      language: "TypeScript",
-      stars: 42,
-      forks: 7,
-      isPrivate: false,
-      updatedAt: new Date("2024-01-15"),
-      owner: "testuser",
-      topics: ["react", "typescript", "ui"],
-    },
-    {
-      id: 2,
-      name: "backend-api",
-      description: "Node.js后端API服务，使用Express和MongoDB",
-      language: "JavaScript",
-      stars: 15,
-      forks: 3,
-      isPrivate: true,
-      updatedAt: new Date("2024-01-10"),
-      owner: "testuser",
-      topics: ["nodejs", "api", "express"],
-    },
-    {
-      id: 3,
-      name: "data-analysis",
-      description: "Python数据分析工具，支持多种数据源和可视化",
-      language: "Python",
-      stars: 23,
-      forks: 5,
-      isPrivate: false,
-      updatedAt: new Date("2024-01-08"),
-      owner: "testuser",
-      topics: ["python", "data-science", "visualization"],
-    },
-    {
-      id: 4,
-      name: "mobile-app",
-      description: "跨平台移动应用，使用React Native开发",
-      language: "JavaScript",
-      stars: 8,
-      forks: 2,
-      isPrivate: true,
-      updatedAt: new Date("2024-01-05"),
-      owner: "testuser",
-      topics: ["react-native", "mobile", "cross-platform"],
-    },
-    {
-      id: 5,
-      name: "portfolio-website",
-      description: "个人作品集网站，展示项目和技能",
-      language: "HTML",
-      stars: 12,
-      forks: 1,
-      isPrivate: false,
-      updatedAt: new Date("2024-01-03"),
-      owner: "testuser",
-      topics: ["portfolio", "website", "css"],
-    },
-  ];
-
   useEffect(() => {
-    // 检查用户登录状态
     const userStr = localStorage.getItem("user");
-    if (userStr) {
-      const userData = JSON.parse(userStr);
-      setUser(userData);
-      setRepositories(mockRepositories);
-    } else {
+    if (!userStr) {
       navigate("/login");
+      return;
     }
+    let userData;
+    try {
+      userData = JSON.parse(userStr);
+    } catch {
+      userData = { username: userStr };
+    }
+    setUser(userData);
+
+    const loadRepos = async () => {
+      setIsLoading(true);
+      try {
+        const userid = userData.userid || userData.id || "";
+        const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
+        const query = userid ? `?userid=${userid}` : "";
+        const res = await apiFetch(`/repo${query}`, {
+          method: "GET",
+          headers: {
+            Authorization: localStorage.getItem("token"),
+          },
+        });
+        const data = await res.json();
+        if (data && data.code === 0) {
+          const repoList = (data.data || []).map((r) => ({
+            id: r.repoid,
+            name: r.reponame,
+            description: r.description,
+            language: r.language,
+            stars: r.stars || 0,
+            forks: r.forks || 0,
+            isPrivate: !!r.isprivate,
+            updatedAt: r.updateTime ? new Date(r.updateTime) : r.createTime ? new Date(r.createTime) : new Date(),
+            owner: r.ownername || (r.ownerid === userData.userid ? userData.username : String(r.ownerid)),
+          }));
+          setRepositories(repoList);
+        } else {
+          setRepositories([]);
+        }
+      } catch (err) {
+        console.error("加载仓库失败", err);
+        setRepositories([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadRepos();
   }, [navigate]);
 
   const filteredRepositories = repositories
     .filter((repo) => {
-      const matchesSearch =
-        !searchQuery ||
-        repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        repo.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = !searchQuery || repo.name.toLowerCase().includes(searchQuery.toLowerCase()) || (repo.description && repo.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      const matchesType =
-        filterType === "all" ||
-        (filterType === "public" && !repo.isPrivate) ||
-        (filterType === "private" && repo.isPrivate);
+      const matchesType = filterType === "all" || (filterType === "public" && !repo.isPrivate) || (filterType === "private" && repo.isPrivate);
 
       return matchesSearch && matchesType;
     })
@@ -127,8 +102,10 @@ const Repos = () => {
   };
 
   const formatDate = (date) => {
+    if (!date) return "";
     const now = new Date();
-    const diff = now.getTime() - date.getTime();
+    const d = date instanceof Date ? date : new Date(date);
+    const diff = now.getTime() - d.getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
     if (days === 0) return "今天";
@@ -160,12 +137,7 @@ const Repos = () => {
       <Controls>
         <SearchContainer>
           <FaSearch size={14} />
-          <SearchInput
-            type="text"
-            placeholder="搜索仓库..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+          <SearchInput type="text" placeholder="搜索仓库..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
         </SearchContainer>
 
         <FiltersContainer>
@@ -184,12 +156,16 @@ const Repos = () => {
       </Controls>
 
       <ReposList>
-        {filteredRepositories.length > 0 ? (
+        {isLoading ? (
+          <EmptyState>
+            <EmptyTitle>加载中...</EmptyTitle>
+          </EmptyState>
+        ) : filteredRepositories.length > 0 ? (
           filteredRepositories.map((repo) => (
             <RepoItem key={repo.id}>
               <RepoHeader>
                 <RepoNameContainer>
-                  <RepoName onClick={() => navigate(`/${user.username}/${repo.name}`)}>
+                  <RepoName onClick={() => navigate(`/${user.username}/${repo.name}?repoid=${repo.id}`)}>
                     <FaBook size={16} />
                     {repo.name}
                   </RepoName>
@@ -265,6 +241,7 @@ const Container = styled.div`
   }
 `;
 
+// ...existing styled components remain unchanged...
 const Header = styled.div`
   display: flex;
   justify-content: space-between;

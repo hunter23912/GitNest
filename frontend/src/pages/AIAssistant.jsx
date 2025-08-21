@@ -1,246 +1,262 @@
 import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
-import { FiCode, FiMessageSquare, FiSend } from "react-icons/fi";
-import { FaRobot, FaLightbulb, FaBug, FaCog } from "react-icons/fa";
+import { FiSend } from "react-icons/fi";
+import { MdCancel } from "react-icons/md";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 function AIAssistant() {
-  const chatEndRef = useRef(null);
   const chatMessagesRef = useRef(null);
+  const DEEPSEEK_API_KEY = "sk-d728c443f64a4a369bac7a9603408d80";
 
   const [messages, setMessages] = useState([
     {
       id: "1",
       type: "ai",
-      content:
-        "你好！我是 GitNest AI 代码助手。我可以帮助您：\n• 代码审查和优化建议\n• Bug 诊断和修复\n• 代码片段生成\n• 最佳实践建议\n\n有什么我可以帮助您的吗？",
+      content: "你好！我是 GitNest AI 代码助手。有什么我可以帮助您的吗？",
       timestamp: new Date(),
     },
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [streamContent, setStreamContent] = useState("");
+  const [abortController, setAbortController] = useState(null);
+  const [isAborted, setIsAborted] = useState(false);
 
   useEffect(() => {
-    // 直接操作 ChatMessages 容器的滚动，而不是整个页面
     if (chatMessagesRef.current) {
       chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
     }
-  }, [messages, isTyping]);
+  }, [messages, isTyping, streamContent]);
 
+  // 流式响应
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
+    setIsAborted(false);
     const userMessage = {
       id: Date.now().toString(),
       type: "user",
       content: inputMessage,
       timestamp: new Date(),
     };
-
+    const controller = new AbortController();
+    setAbortController(controller);
     setMessages((prev) => [...prev, userMessage]);
     setInputMessage("");
     setIsTyping(true);
+    setStreamContent("");
 
-    // 模拟 AI 响应
-    setTimeout(() => {
+    const history = [
+      ...messages.map((m) => ({
+        role: m.type === "user" ? "user" : "assistant",
+        content: m.content,
+      })),
+      { role: "user", content: inputMessage },
+    ];
+
+    try {
+      const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "deepseek-chat",
+          messages: history,
+          stream: true,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.body) throw new Error("无响应流");
+
+      const reader = res.body.getReader();
+      let aiContent = "";
+      const decoder = new TextDecoder("utf-8");
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        chunk.split("\n").forEach((line) => {
+          if (line.startsWith("data:")) {
+            try {
+              const json = JSON.parse(line.slice(5));
+              const delta = json.choices?.[0]?.delta?.content || "";
+              aiContent += delta;
+              setStreamContent(aiContent);
+            } catch {}
+          }
+        });
+      }
+
       const aiResponse = {
         id: (Date.now() + 1).toString(),
         type: "ai",
-        content: generateAIResponse(inputMessage),
+        content: aiContent || "AI助手暂时无法回答，请稍后再试。",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, aiResponse]);
+    } catch (err) {
+      if (err.name === "AbortError") {
+        setIsAborted(true);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 2).toString(),
+            type: "ai",
+            content: "回复已中断。",
+            timestamp: new Date(),
+          },
+        ]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 2).toString(),
+            type: "ai",
+            content: "AI助手请求失败，请检查网络或API Key。",
+            timestamp: new Date(),
+          },
+        ]);
+      }
+    } finally {
       setIsTyping(false);
-    }, 1500);
+      setStreamContent("");
+      setAbortController(null);
+    }
   };
 
-  const generateAIResponse = (userInput) => {
-    const responses = [
-      "这是一个很好的问题！让我为您提供一些建议...",
-      "根据最佳实践，我建议您可以这样做...",
-      "我发现了一些可以优化的地方...",
-      "这段代码看起来不错，但可以通过以下方式改进...",
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
+  const handleAbort = () => {
+    if (abortController) {
+      abortController.abort();
+      setIsTyping(false);
+      setAbortController(null);
+    }
   };
-
-  const quickActions = [
-    { icon: FaBug, title: "代码调试", description: "帮助查找和修复代码中的问题" },
-    { icon: FaCog, title: "性能优化", description: "分析代码性能并提供优化建议" },
-    { icon: FaLightbulb, title: "最佳实践", description: "提供行业标准的编程最佳实践" },
-    { icon: FiCode, title: "代码生成", description: "根据需求生成代码模板" },
-  ];
 
   return (
-    <Container>
-      <Content>
-        <Header>
-          <HeaderTitle>
-            <FaRobot />
-            GitNest AI 代码助手
-          </HeaderTitle>
-          <HeaderSubtitle>智能代码分析、优化建议和开发辅助</HeaderSubtitle>
-        </Header>
-
-        <MainSection>
-          <ChatSection>
-            <ChatHeader>
-              <FiMessageSquare />
-              对话窗口
-            </ChatHeader>
-            <ChatMessages ref={chatMessagesRef}>
-              {messages.map((message) => (
-                <MessageBubble key={message.id} type={message.type}>
-                  <MessageContent>
-                    {message.content}
-                    {message.codeSnippet && (
-                      <CodeSnippet>
-                        <CodeHeader>{message.language}</CodeHeader>
-                        <pre>{message.codeSnippet}</pre>
-                      </CodeSnippet>
-                    )}
-                  </MessageContent>
-                  <MessageTime>{message.timestamp.toLocaleTimeString()}</MessageTime>
-                </MessageBubble>
-              ))}
-              {isTyping && (
-                <MessageBubble type="ai">
-                  <TypingIndicator>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </TypingIndicator>
-                </MessageBubble>
-              )}
-            </ChatMessages>
-            <ChatInput>
-              <InputContainer>
-                <MessageInput
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  placeholder="输入您的问题或粘贴代码..."
-                  onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                />
-                <SendButton onClick={handleSendMessage}>
-                  <FiSend />
-                </SendButton>
-              </InputContainer>
-            </ChatInput>
-          </ChatSection>
-
-          <SidebarSection>
-            <QuickActions>
-              <SectionTitle>快速功能</SectionTitle>
-              {quickActions.map((action, index) => (
-                <ActionCard key={index}>
-                  <ActionIcon>
-                    <action.icon />
-                  </ActionIcon>
-                  <ActionContent>
-                    <ActionTitle>{action.title}</ActionTitle>
-                    <ActionDescription>{action.description}</ActionDescription>
-                  </ActionContent>
-                </ActionCard>
-              ))}
-            </QuickActions>
-
-            <AIStats>
-              <SectionTitle>AI 统计</SectionTitle>
-              <StatItem>
-                <StatLabel>今日分析代码</StatLabel>
-                <StatValue>1,234 行</StatValue>
-              </StatItem>
-              <StatItem>
-                <StatLabel>发现问题</StatLabel>
-                <StatValue>23 个</StatValue>
-              </StatItem>
-              <StatItem>
-                <StatLabel>优化建议</StatLabel>
-                <StatValue>45 条</StatValue>
-              </StatItem>
-            </AIStats>
-          </SidebarSection>
-        </MainSection>
-      </Content>
-    </Container>
+    <FullScreenContainer>
+      <ChatBox>
+        <ChatMessages ref={chatMessagesRef}>
+          {messages.map((message, idx) => (
+            <MessageBubble key={message.id} type={message.type}>
+              <MessageContent>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    code({ node, inline, className, children, ...props }) {
+                      const match = /language-(\w+)/.exec(className || "");
+                      return !inline ? (
+                        <SyntaxHighlighter style={oneDark} language={match?.[1] || "plaintext"} PreTag="div" {...props}>
+                          {String(children).replace(/\n$/, "")}
+                        </SyntaxHighlighter>
+                      ) : (
+                        <code className={className} {...props}>
+                          {children}
+                        </code>
+                      );
+                    },
+                    table({ children }) {
+                      return <table style={{ borderCollapse: "collapse", width: "100%" }}>{children}</table>;
+                    },
+                    th({ children }) {
+                      return <th style={{ border: "1px solid #e2e8f0", padding: "6px", background: "#f8fafc" }}>{children}</th>;
+                    },
+                    td({ children }) {
+                      return <td style={{ border: "1px solid #e2e8f0", padding: "6px" }}>{children}</td>;
+                    },
+                  }}
+                >
+                  {message.content}
+                </ReactMarkdown>
+              </MessageContent>
+            </MessageBubble>
+          ))}
+          {isTyping && (
+            <MessageBubble type="ai">
+              <MessageContent>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    code({ node, inline, className, children, ...props }) {
+                      const match = /language-(\w+)/.exec(className || "");
+                      return !inline ? (
+                        <SyntaxHighlighter style={oneDark} language={match?.[1] || "plaintext"} PreTag="div" {...props}>
+                          {String(children).replace(/\n$/, "")}
+                        </SyntaxHighlighter>
+                      ) : (
+                        <code className={className} {...props}>
+                          {children}
+                        </code>
+                      );
+                    },
+                    table({ children }) {
+                      return <table style={{ borderCollapse: "collapse", width: "100%" }}>{children}</table>;
+                    },
+                    th({ children }) {
+                      return <th style={{ border: "1px solid #e2e8f0", padding: "6px", background: "#f8fafc" }}>{children}</th>;
+                    },
+                    td({ children }) {
+                      return <td style={{ border: "1px solid #e2e8f0", padding: "6px" }}>{children}</td>;
+                    },
+                  }}
+                >
+                  {streamContent}
+                </ReactMarkdown>
+              </MessageContent>
+              <TypingIndicator>
+                <span></span>
+                <span></span>
+                <span></span>
+              </TypingIndicator>
+            </MessageBubble>
+          )}
+        </ChatMessages>
+        <ChatInput>
+          <InputContainer>
+            <MessageInput value={inputMessage} onChange={(e) => setInputMessage(e.target.value)} placeholder="输入您的问题或粘贴代码..." onKeyPress={(e) => e.key === "Enter" && handleSendMessage()} />
+            <SendButton onClick={isTyping ? handleAbort : handleSendMessage}>{isTyping ? <MdCancel size={22} /> : <FiSend />}</SendButton>
+          </InputContainer>
+        </ChatInput>
+      </ChatBox>
+    </FullScreenContainer>
   );
 }
 
 // 样式组件
-
-const Container = styled.div`
+const FullScreenContainer = styled.div`
   min-height: 100vh;
+  width: 100vw;
   background: #f8fafc;
-`;
-
-const Content = styled.div`
-  width: 100%;
-  margin: 0 auto;
-  padding: 2rem;
-
-  @media (min-width: 1600px) {
-    max-width: 1600px;
-  }
-`;
-
-const Header = styled.header`
-  text-align: center;
-  margin-bottom: 2rem;
-`;
-
-const HeaderTitle = styled.h1`
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #1a202c;
-  margin-bottom: 0.5rem;
+  overflow: hidden; /* 去除外部滚动条 */
 `;
 
-const HeaderSubtitle = styled.p`
-  font-size: 1.1rem;
-  color: #64748b;
-`;
-
-const MainSection = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 350px;
-  gap: 2rem;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const ChatSection = styled.div`
+const ChatBox = styled.div`
+  width: 100vw;
+  height: 100vh;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
+  border-radius: 0;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
-  height: 600px;
-`;
-
-const ChatHeader = styled.div`
-  padding: 1rem 1.5rem;
-  background: #667eea;
-  color: white;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  overflow: hidden; /* 去除内部滚动条 */
 `;
 
 const ChatMessages = styled.div`
   flex: 1;
-  height: 400px;
   overflow-y: auto;
-  padding: 1rem;
+  padding: 2rem 1.5rem 1rem 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.2rem;
 `;
 
 const MessageBubble = styled.div`
@@ -248,40 +264,28 @@ const MessageBubble = styled.div`
   max-width: 80%;
   background: ${(props) => (props.type === "user" ? "#667eea" : "#f1f5f9")};
   color: ${(props) => (props.type === "user" ? "white" : "#334155")};
-  padding: 0.75rem 1rem;
-  border-radius: 18px;
+  padding: 0.18rem 0.7rem; // 更小的上下间距
+  border-radius: 14px;
   border-top-${(props) => (props.type === "user" ? "right" : "left")}-radius: 4px;
+  word-break: break-word;
 `;
 
 const MessageContent = styled.div`
   white-space: pre-wrap;
-  line-height: 1.5;
-`;
-
-const MessageTime = styled.div`
-  font-size: 0.75rem;
-  opacity: 0.7;
-  margin-top: 0.25rem;
-`;
-
-const CodeSnippet = styled.div`
-  background: #1e293b;
-  color: #f1f5f9;
-  border-radius: 6px;
-  margin-top: 0.5rem;
-  overflow: hidden;
-`;
-
-const CodeHeader = styled.div`
-  background: #334155;
-  padding: 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 600;
+  line-height: 1.15; // 更紧凑
+  font-size: 1rem;
+  code {
+    background: #e2e8f0;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  }
 `;
 
 const TypingIndicator = styled.div`
   display: flex;
   gap: 4px;
+  margin-top: 8px;
 
   span {
     width: 8px;
@@ -311,8 +315,9 @@ const TypingIndicator = styled.div`
 `;
 
 const ChatInput = styled.div`
-  padding: 1rem;
+  padding: 1rem 1.5rem;
   border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
 `;
 
 const InputContainer = styled.div`
@@ -326,6 +331,7 @@ const MessageInput = styled.input`
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   outline: none;
+  font-size: 1rem;
 
   &:focus {
     border-color: #667eea;
@@ -347,93 +353,6 @@ const SendButton = styled.button`
   &:hover {
     background: #5a67d8;
   }
-`;
-
-const SidebarSection = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-`;
-
-const QuickActions = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-`;
-
-const SectionTitle = styled.h3`
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #1a202c;
-  margin-bottom: 1rem;
-`;
-
-const ActionCard = styled.div`
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background: #f8fafc;
-  }
-`;
-
-const ActionIcon = styled.div`
-  background: #eef2ff;
-  color: #667eea;
-  padding: 0.5rem;
-  border-radius: 8px;
-  font-size: 1.25rem;
-`;
-
-const ActionContent = styled.div`
-  flex: 1;
-`;
-
-const ActionTitle = styled.div`
-  font-weight: 600;
-  color: #1a202c;
-  margin-bottom: 0.25rem;
-`;
-
-const ActionDescription = styled.div`
-  font-size: 0.875rem;
-  color: #64748b;
-  line-height: 1.4;
-`;
-
-const AIStats = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-`;
-
-const StatItem = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #f1f5f9;
-
-  &:last-child {
-    border-bottom: none;
-  }
-`;
-
-const StatLabel = styled.span`
-  color: #64748b;
-  font-size: 0.875rem;
-`;
-
-const StatValue = styled.span`
-  font-weight: 600;
-  color: #667eea;
 `;
 
 export default AIAssistant;
